@@ -3,17 +3,17 @@
 
 class Socket : public BaseSocket
 {
-public:
-	Socket();
-	Socket(const SOCKET socket);
-	Socket(const std::string& server_addr, unsigned cPort);
-	virtual ~Socket();
+  public:
+    Socket();
+    Socket(const SOCKET socket);
+    Socket(const std::string &server_addr, unsigned cPort);
+    virtual ~Socket();
 
-	Socket& operator=(const Socket& other) {
-		BaseSocket::operator = (other);
-		return *this;
-	}
+    Socket &operator=(const Socket &other)
+    {
+        BaseSocket::operator=(other);
+        return *this;
+    }
 
-	int connectSocket(const std::string& server_addr, unsigned cPort);
+    int connect(const std::string &server_addr, unsigned cPort);
 };
-

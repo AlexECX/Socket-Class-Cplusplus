@@ -1,72 +1,66 @@
 #pragma once
 #include <winsock.h>
 #include <string>
-#include <memory>  
+#include <memory>
 #include "WSA_Utils.h"
 
 #define TRACEBACK __FILE__, __LINE__, __FUNCTION__
 
-
 class SocketWrap;
 
-struct connectionInfo {
-	std::string IP;
-	std::string Port;
+struct connectionInfo
+{
+    char* IP;
+    u_short Port;
 };
-
 
 class BaseSocket
 {
-private:
+  private:
+    bool is_valid;
+    std::string socket_err = "";
 
-	bool is_valid;
-	std::string socket_err = "";
+  protected:
+    int af, type, protocol;
+    std::shared_ptr<SocketWrap> mySocket_ptr = nullptr;
+    SOCKET mySocket;
+    SOCKADDR_IN addrInfo = {0};
 
-protected:
+    BaseSocket(int af = AF_INET, int type = SOCK_STREAM, int protocol = IPPROTO_TCP);
+    BaseSocket(const SOCKET &socket);
+    BaseSocket &operator=(const BaseSocket &other);
+    void socketError(const std::string &msg, std::string f);
 
-	int af, type, protocol;
-	std::shared_ptr<SocketWrap> mySocket_ptr = nullptr;
-	SOCKET		mySocket;
-	SOCKADDR_IN addrInfo = { 0 };
+  public:
+    virtual ~BaseSocket();
 
-	BaseSocket(int af=AF_INET, int type=SOCK_STREAM, int protocol=IPPROTO_TCP);
-	BaseSocket(const SOCKET& socket);
-	BaseSocket& operator=(const BaseSocket& other);
-	void socketError(const std::string& msg, std::string f);
+    connectionInfo getIPinfo();
 
-public:
+    connectionInfo getIPinfoLocal();
 
-	virtual ~BaseSocket();
+    std::string getSocketErr();
 
-	connectionInfo getIPinfo();
+    int shutdown(int how);
 
-	connectionInfo getIPinfoLocal();
+    void close();
 
-	std::string getSocketErr();
+    bool valid_socket() { return mySocket > 0; }
 
-	int shutdown(int how);
+    int sendFile(std::string FilePath);
 
-	void close();
+    int recvFile(std::string FilePath);
 
-	bool valid_socket() { return mySocket > 0; }
+    //permet d'envoyer une string. Si trop grand,
+    //l'envoie en plusieurs paquets.
+    int sendStr(const std::string &message);
 
-	int sendFile(std::string FilePath);
+    //permet de recevoir une string. Si trop grand,
+    //est pret a recevoir en plusieurs paquets.
+    int recvStr(std::string &message);
 
-	int recvFile(std::string FilePath);
+    void sendStr_Ex(const std::string &message);
 
-	//permet d'envoyer un fichier. Si trop grand,
-	//l'envoie en plusieurs paquets.
-	int sendMsg_noExcept(const std::string &message);
+    void recvStr_Ex(std::string &message);
 
-	//permet de recevoir un fichier. Si trop grand,
-	//est pret a recevoir en plusieurs paquets.
-	int recvMsg_noExcept(std::string &message);
-
-	void sendMsg(const std::string &message);
-
-	void recvMsg(std::string &message);
-
-	std::string recvMsg();
-
+    std::string recvStr_Ex();
 };
-
