@@ -1,18 +1,20 @@
-#include "Socket.h"
-#include "SocketException.h"
+#include "SocketC++.h"
 #include <string>
 
 using namespace std;
+using namespace cppsock;
+
+//Socket///////////////////////////////////////////////////////
 
 Socket::Socket()
 {
 }
 
-Socket::Socket(SOCKET socket) : BaseSocket(socket)
+Socket::Socket(const SOCKET &socket) : BaseSocket(socket)
 {
 }
 
-Socket::Socket(const string &server_addr, unsigned cPort)
+Socket::Socket(const char* server_addr, unsigned short cPort)
 {
     connect(server_addr, cPort);
 }
@@ -21,18 +23,19 @@ Socket::~Socket()
 {
 }
 
-int Socket::connect(const string &server_addr, unsigned cPort)
+
+int Socket::connect(const char* server_addr, unsigned short cPort)
 {
     addrInfo.sin_family = this->af;
-    addrInfo.sin_port = ::htons(cPort);
+    addrInfo.sin_port = cPort;
 
-    addrInfo.sin_addr.s_addr = ::inet_addr(server_addr.c_str());
+    addrInfo.sin_addr.s_addr = ::inet_addr(server_addr);
     if (addrInfo.sin_addr.s_addr == INADDR_NONE)
     {
-        LPHOSTENT lpHostEntry = ::gethostbyname(server_addr.c_str());
+        LPHOSTENT lpHostEntry = ::gethostbyname(server_addr);
         if (lpHostEntry == NULL)
         {
-            throw SocketException(server_addr + " invalid parameter", TRACEBACK);
+            throw SocketException(string(server_addr) + " invalid parameter", TRACEBACK);
         }
         else
         {
@@ -44,7 +47,6 @@ int Socket::connect(const string &server_addr, unsigned cPort)
     if (status < 0)
     {
         this->socketError(WSA_ERROR, __FUNCTION__);
-        return status;
     }
 
     return status;

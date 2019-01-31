@@ -5,7 +5,7 @@
 
 namespace WSA_Utils {
 	void initWSA();
-    
+	void cleanWSA();
 	std::string LastError();
 	std::string formatWSAError(int error_code);
 }

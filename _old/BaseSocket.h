@@ -6,25 +6,45 @@
 
 #define TRACEBACK __FILE__, __LINE__, __FUNCTION__
 
-class SocketWrap;
+//Wrapper to help manage SOCKET lifetime
+class SocketWrap
+{
+private:
+	SOCKET theSocket;
+
+public:
+	SocketWrap(SOCKET socket)
+	{
+		theSocket = socket;
+	}
+	~SocketWrap()
+	{
+		closesocket(theSocket);
+	}
+
+	SOCKET &getSocket()
+	{
+		return theSocket;
+	}
+};
+
+class SocketStream;
 
 struct connectionInfo
 {
-    char* IP;
+    char *IP;
     u_short Port;
 };
 
 class BaseSocket
 {
   private:
-    bool is_valid;
-    std::string socket_err = "";
-
   protected:
     int af, type, protocol;
     std::shared_ptr<SocketWrap> mySocket_ptr = nullptr;
     SOCKET mySocket;
     SOCKADDR_IN addrInfo = {0};
+    std::string socket_err = "";
 
     BaseSocket(int af = AF_INET, int type = SOCK_STREAM, int protocol = IPPROTO_TCP);
     BaseSocket(const SOCKET &socket);
@@ -63,4 +83,6 @@ class BaseSocket
     void recvStr_Ex(std::string &message);
 
     std::string recvStr_Ex();
+
+	SocketStream getStream();
 };

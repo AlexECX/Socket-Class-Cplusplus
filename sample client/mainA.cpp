@@ -2,21 +2,21 @@
 #include <string>
 #include <windows.h>
 #include <thread>
-#include "../SocketException.h"
-#include "../Socket.h"
+#include "../SocketC++.h"
 
 using namespace std;
+using namespace cppsock;
 
 #define HARD_CODED
 #define HOST "127.0.0.1" //Can be Name or IP address
 #define PORT 2030
 
-void runClient(unsigned nPort, const string& host);
+void runClient(unsigned short nPort, const char* host);
 
 int main(int argc, char **argv)
 {
-	unsigned nPort;
-	string host;
+	unsigned short nPort;
+	const char* host;
 
 	//
 	// Check for the host and port arguments
@@ -41,12 +41,11 @@ int main(int argc, char **argv)
 
 	// Release WinSock
 	//
-	WSACleanup();
+	WSA_Utils::cleanWSA();
 	return 0;
-
 }
 
-void runClient(unsigned nPort, const string& host)
+void runClient(unsigned short nPort, const char* host)
 {
 
 	try
@@ -58,6 +57,7 @@ void runClient(unsigned nPort, const string& host)
 		while (true) {
 			cout << "\nconnection a " + string(host) + " sur port " << nPort;
 			if (client.connect(host, nPort) < 0) {
+				cout << endl << client.getSocketErr();
 				this_thread::sleep_for(2s); 
 			}
 			else {
@@ -66,11 +66,15 @@ void runClient(unsigned nPort, const string& host)
 		}
 		cout << "\nConnecte." << endl;
         cout << "\nEnvoie message" << endl;
-		client.sendStr_Ex("this is client");
+		SocketIO stream = client.getStream();
+		const char* str = "this is client";
+		/*stream.sendStr("this is client");
         std::string packet;
         cout << "\nReception en cours..." << endl;
-        client.recvStr_Ex(packet);
-        cout << "\nMessage recu: "+packet << endl;
+        stream.recvStr(packet);
+        cout << "\nMessage recu: "+packet << endl;*/
+		cout << endl << stream.recvFile("./client.mp4");
+		
 
 	}
 	catch (const SocketException& e)

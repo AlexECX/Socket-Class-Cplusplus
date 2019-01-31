@@ -21,6 +21,11 @@ namespace WSA_Utils {
 		}
 	}
 
+	void WSA_Utils::cleanWSA()
+	{
+		WSACleanup();
+	}
+
 	std::string WSA_Utils::LastError()
 	{
 		return formatWSAError(WSAGetLastError());

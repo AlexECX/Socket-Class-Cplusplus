@@ -2,18 +2,15 @@
 #include <string>
 #include <windows.h>
 #include <thread>
-#include "../SocketException.h"
-#include "../ServerSocket.h"
-
+#include "../SocketC++.h"
 
 using namespace std;
+using namespace cppsock;
 
 #define HARD_CODED
 #define PORT 2030
 
 void runServer(unsigned nPort);
-void scriptedConvoTest(Socket clientA, Socket clientB);
-string getFileName(const string& s);
 
 int main(int argc, char **argv)
 {
@@ -40,7 +37,7 @@ int main(int argc, char **argv)
 
 	// Release WinSock
 	//
-	WSACleanup();
+	WSA_Utils::cleanWSA();
 	return 0;
 }
 
@@ -60,11 +57,13 @@ void runServer(unsigned nPort)
             throw SocketException(client.getSocketErr(), TRACEBACK);
         }
         cout << "\nReception en cours..." << endl;
-        client.recvStr_Ex(message);
+		SocketIO stream = client.getStream();
+        /*stream.recvStr(message);
         cout << "\nMessage recu: "+message << endl;
-        cout << "\nEnvoie au client..." << endl;
-        client.sendStr_Ex("this is server");
-        
+        cout << "\nEnvoie au client..." << endl;*/
+        //stream.send("this is server");
+		cout << endl << stream.sendFile("../Debug/server.mp4");
+		
 		
 	}
 	catch (const SocketException& e)

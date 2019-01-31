@@ -1,9 +1,9 @@
-#include "SocketException.h"
+#include "SocketC++.h"
 #include <string>
 
 
 using namespace std;
-
+using namespace cppsock;
 
 SocketException::SocketException(const string & msg) :
 	std::runtime_error(msg) {
