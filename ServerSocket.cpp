@@ -12,12 +12,12 @@ ServerSocket::ServerSocket()
 {
 }
 
-ServerSocket::ServerSocket(unsigned short cPort)
+ServerSocket::ServerSocket(const char* cPort)
 {
 	bind("", cPort);
 }
 
-ServerSocket::ServerSocket(const char* server_addr, unsigned short cPort)
+ServerSocket::ServerSocket(const char* server_addr, const char* cPort)
 {
 	bind(server_addr, cPort);
 }
@@ -27,37 +27,38 @@ ServerSocket::~ServerSocket()
 {
 }
 
-int ServerSocket::bind(const char* server_addr, unsigned short cPort, unsigned queue_size)
+int ServerSocket::bind(const char* server_addr, const char* cPort, unsigned queue_size)
 {
-	addrInfo.sin_family = this->af;
-
+	addrinfo *result = this->addrInfo.ai_next;
+	int nRet;
 	if (server_addr != "") {
-		addrInfo.sin_addr.s_addr = ::inet_addr(server_addr);
-		if (addrInfo.sin_addr.s_addr == INADDR_NONE) {
-			LPHOSTENT lpHostEntry = ::gethostbyname(server_addr);
-			if (lpHostEntry == NULL) {
-				throw SocketException(string(server_addr) + " invalid parameter", TRACEBACK);
-			}
-			else {
-				addrInfo.sin_addr = *((LPIN_ADDR)*lpHostEntry->h_addr_list);
-			}
-		}
+		nRet = ::getaddrinfo(server_addr, cPort, &this->addrInfo, &result);
 	}
 	else {
-		addrInfo.sin_addr.s_addr = INADDR_ANY;   }
-	
-	addrInfo.sin_port = cPort;        // Use port from command line
+		this->addrInfo.ai_flags = AI_PASSIVE;
+		nRet = ::getaddrinfo(NULL, cPort, &this->addrInfo, &result);
+	}
 
-	int status;
-	status = ::bind(mySocket, (LPSOCKADDR)&addrInfo, sizeof(struct sockaddr));
-	if (status < 0) {
+	if (nRet != 0) {
+		this->socketError(WSA_ERROR, __FUNCTION__);
+		nRet = -1;
+	}
+	else if (0 > (nRet = ::bind(mySocket, result->ai_addr, (int)result->ai_addrlen))) {
 		this->socketError(WSA_ERROR, __FUNCTION__);
 	}
-	else if ((status = ::listen(mySocket, queue_size)) < 0)
+	else if (0 > (nRet = ::listen(mySocket, queue_size))) {
+		this->socketError(WSA_ERROR, __FUNCTION__);
+	}
+	else
 	{
-		this->socketError(WSA_ERROR, __FUNCTION__);
+		this->addrInfo.ai_addr = result->ai_addr;
+		this->addrInfo.ai_addrlen = result->ai_addrlen;
+		this->addrInfo.ai_canonname = result->ai_canonname;
 	}
-	return status;
+	
+	::freeaddrinfo(this->addrInfo.ai_next);
+
+	return nRet;
 }
 
 Socket ServerSocket::accept()

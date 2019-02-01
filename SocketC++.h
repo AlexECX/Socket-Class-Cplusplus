@@ -1,9 +1,9 @@
 #pragma once
-#include <winsock.h>
+#include "WSA_Utils.h"
 #include <stdexcept>
 #include <string>
 #include <memory>
-#include "WSA_Utils.h"
+
 
 namespace cppsock {
 
@@ -57,6 +57,9 @@ namespace cppsock {
     private:
         //std::shared_ptr<SocketWrap> mySocket_ptr = nullptr;
         SOCKET mySocket;
+		int nRet;
+		int flags = 0; //flags parameter of winsock functions
+		char iobuffer[4096];
 
     public:
         SocketIO(const SOCKET &socket);
@@ -64,45 +67,56 @@ namespace cppsock {
 
 		std::string getSocketErr();
 
-		//send a files length followed by a file read in 5mb chunks
-        int sendFile(const std::string &filePath);
+		int getIOError() { return nRet; }
 
-		//recv a files length followed by a file written in 5mb chunks
-        int recvFile(const std::string &filePath);
+		bool ioInterupt() { return nRet < 1; }
 
-		//send a null terminated string
-		int sendStr(const std::string &str);
-
-		//recv until null terminator is encountered
-		int recvStr(std::string &str);
-
-		//send until sizeof(int) bytes are sent
-		int send(const int i);
-    
-		//winsock::send wrapper, sends only once
-		int send(const char* msg, unsigned offset, unsigned len);
+		void setFlags(int flags) { this->flags = flags; }
 
 		//send until len characters are sent
-		int send(const char* msg, unsigned len);
-		
-		//send until len characters starting at offset position are sent
-		int send(const std::string &str, unsigned offset, unsigned len);
-
-		//send the content of a string, no std::string null terminator
-		int send(const std::string &str);
-
-		//recv until sizeof(int) bytes are received
-		int recv(int& i);
+		int send(const char* msg, int len);
 
 		//winsock::recv wrapper, receives only once
-        int recv(char* msg, unsigned offset, unsigned len);
+		int recv(char* msg, int len);
 
 		//recv until len characters are received
-		int recv(char* msg, unsigned len);
+		int recv(char* msg, int offset, int len);
+
+		//send until sizeof(T) bytes are sent
+		template <class T>
+		int send(const T& i);
+
+		//recv until sizeof(T) bytes are received
+		template <class T>
+		int recv(T& i);
+
+		//send until len characters starting at offset position are sent
+		size_t send(const std::string &str, size_t offset, size_t len);
+
+		//send the content of a string, no std::string null terminator
+		size_t send(const std::string &str);
+
+		//recv into string container until len characters are received
+		size_t recv(std::string &str, size_t len);
 
 		//recv into string container until connection is closed
-        int recv(std::string &str);
+		size_t recv(std::string &str);
 
+		//send a null terminated string
+		size_t sendStr(const std::string &str);
+
+		//recv until null terminator is encountered
+		size_t recvStr(std::string &str);
+
+		size_t sendLarge(const char* msg, size_t offset, size_t len);
+
+		size_t recvLarge(const char* msg, size_t offset, size_t len);
+
+		//send a files length followed by a file read in 5mb chunks
+		size_t sendFile(const std::string &filePath);
+
+		//recv a files length followed by a file written in 5mb chunks
+		size_t recvFile(const std::string &filePath);
     };
 
     class BaseSocket
@@ -110,10 +124,9 @@ namespace cppsock {
 
     private:
     protected:
-        int af, type, protocol;
 		bool autoclose = true;
         SOCKET mySocket;
-        SOCKADDR_IN addrInfo = {0};
+		addrinfo addrInfo = {0};
         std::string socket_err = "";
 
         BaseSocket(const SOCKET &socket);
@@ -128,9 +141,9 @@ namespace cppsock {
 
         virtual ~BaseSocket();
 
-        connectionInfo getIPinfo();
+        /*connectionInfo getIPinfo();
 
-        connectionInfo getIPinfoLocal();
+        connectionInfo getIPinfoLocal();*/
 
         std::string getSocketErr();
 
@@ -141,26 +154,6 @@ namespace cppsock {
         bool valid_socket() { return mySocket > 0; }
 
 		SocketIO getStream();
-
-        //int sendFile(std::string FilePath);
-
-        //int recvFile(std::string FilePath);
-
-        ////permet d'envoyer une string. Si trop grand,
-        ////l'envoie en plusieurs paquets.
-        //int sendStr(const std::string &message);
-
-        ////permet de recevoir une string. Si trop grand,
-        ////est pret a recevoir en plusieurs paquets.
-        //int recvStr(std::string &message);
-
-        //void sendStr_Ex(const std::string &message);
-
-        //void recvStr_Ex(std::string &message);
-
-        //std::string recvStr_Ex();
-
-        
     };
 
 
@@ -173,7 +166,7 @@ namespace cppsock {
 
     public:
         Socket();
-        Socket(const char* server_addr, unsigned short cPort);
+        Socket(const char* server_addr, const char* cPort);
         virtual ~Socket();
 
 		Socket &operator=(const Socket& other) {
@@ -181,7 +174,7 @@ namespace cppsock {
 			return *this;
 		}
 
-        int connect(const char* server_addr, unsigned short cPort);
+        int connect(const char* server_addr, const char* cPort);
     };
 
 
@@ -189,8 +182,8 @@ namespace cppsock {
 	{
 	public:
 		ServerSocket();
-		ServerSocket(unsigned short cPort);
-		ServerSocket(const char* server_addr, unsigned short cPort);
+		ServerSocket(const char* cPort);
+		ServerSocket(const char* server_addr, const char* cPort);
 		virtual ~ServerSocket();
 
 		ServerSocket &operator=(const ServerSocket& other) {
@@ -198,7 +191,7 @@ namespace cppsock {
 			return *this;
 		}
 
-		int bind(const char* server_addr, unsigned short cPort, unsigned queue_size = 5);
+		int bind(const char* server_addr, const char* cPort, unsigned queue_size = SOMAXCONN);
 
 		Socket accept();
 	};

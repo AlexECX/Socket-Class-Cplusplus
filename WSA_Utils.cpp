@@ -1,8 +1,5 @@
 #include "WSA_Utils.h"
-
-#include <winsock.h>
 #include <string>
-#include <iostream>
 #include <map>
 
 namespace WSA_Utils {
@@ -10,13 +7,12 @@ namespace WSA_Utils {
 	void WSA_Utils::initWSA() {
 		WORD wVersionRequested = MAKEWORD(2, 0);
 		WSADATA wsaData;
-		int nRet;
 		//
 		// Initialize WinSock and check the version
 		//
-		nRet = WSAStartup(wVersionRequested, &wsaData);
+		int nRet = WSAStartup(wVersionRequested, &wsaData);
 		if (wsaData.wVersion != wVersionRequested) {
-			std::cout << "Wrong version";
+			printf("\nWrong version");
 			return;
 		}
 	}

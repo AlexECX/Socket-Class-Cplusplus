@@ -8,9 +8,9 @@ using namespace cppsock;
 
 BaseSocket::BaseSocket(int af, int type, int protocol)
 {
-	this->af = af;
-	this->type = type;
-	this->protocol = protocol;
+	this->addrInfo.ai_family = af;
+	this->addrInfo.ai_socktype = type;
+	this->addrInfo.ai_protocol = protocol;
 	//mySocket_ptr = make_shared<SocketWrap>(::socket(af, type, protocol));
 	mySocket = ::socket(af, type, protocol);
 
@@ -55,9 +55,6 @@ BaseSocket &BaseSocket::operator=(const BaseSocket &other)
     //mySocket_ptr = other.mySocket_ptr;
 	if (this != &other)
 	{
-		this->af = other.af;
-		this->type = other.type;
-		this->protocol = other.protocol;
 		this->mySocket = other.mySocket;
 		this->addrInfo = other.addrInfo;
 		this->socket_err = other.socket_err;
@@ -81,25 +78,25 @@ void BaseSocket::socketError(const string &msg, string f)
     this->socket_err = f + " " + msg + "\n";
 }
 
-connectionInfo BaseSocket::getIPinfo()
-{
-    int tmp = sizeof(addrInfo);
-    ::getpeername(mySocket, (sockaddr *)&addrInfo, &tmp);
-    connectionInfo info;
-    info.IP = ::inet_ntoa(addrInfo.sin_addr);
-    info.Port = ::ntohs(addrInfo.sin_port);
-    return info;
-}
-
-connectionInfo BaseSocket::getIPinfoLocal()
-{
-    int tmp = sizeof(addrInfo);
-    getsockname(mySocket, (sockaddr *)&addrInfo, &tmp);
-    connectionInfo info;
-    info.IP = ::inet_ntoa(addrInfo.sin_addr);
-    info.Port = ::ntohs(addrInfo.sin_port);
-    return info;
-}
+//connectionInfo BaseSocket::getIPinfo()
+//{
+//    int tmp = sizeof(addrInfo);
+//    ::getpeername(mySocket, (sockaddr *)&addrInfo, &tmp);
+//    connectionInfo info;
+//    info.IP = ::inet_ntoa(addrInfo.sin_addr);
+//    info.Port = ::ntohs(addrInfo.sin_port);
+//    return info;
+//}
+//
+//connectionInfo BaseSocket::getIPinfoLocal()
+//{
+//    int tmp = sizeof(addrInfo);
+//    getsockname(mySocket, (sockaddr *)&addrInfo, &tmp);
+//    connectionInfo info;
+//    info.IP = ::inet_ntoa(addrInfo.sin_addr);
+//    info.Port = ::ntohs(addrInfo.sin_port);
+//    return info;
+//}
 
 std::string BaseSocket::getSocketErr()
 {
