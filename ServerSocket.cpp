@@ -1,5 +1,6 @@
 #include "SocketC++.h"
 #include <string>
+#include <iostream>
 
 
 using namespace std;
@@ -40,20 +41,21 @@ int ServerSocket::bind(const char* server_addr, const char* cPort, unsigned queu
 	}
 
 	if (nRet != 0) {
-		this->socketError(WSA_ERROR, __FUNCTION__);
+		this->socketError(/*WSA_ERROR, __FUNCTION__*/);
 		nRet = -1;
 	}
 	else if (0 > (nRet = ::bind(mySocket, result->ai_addr, (int)result->ai_addrlen))) {
-		this->socketError(WSA_ERROR, __FUNCTION__);
+		this->socketError(/*WSA_ERROR, __FUNCTION__*/);
 	}
 	else if (0 > (nRet = ::listen(mySocket, queue_size))) {
-		this->socketError(WSA_ERROR, __FUNCTION__);
+		this->socketError(/*WSA_ERROR, __FUNCTION__*/);
 	}
 	else
 	{
-		this->addrInfo.ai_addr = result->ai_addr;
+		this->addrSock = *result->ai_addr;
 		this->addrInfo.ai_addrlen = result->ai_addrlen;
-		this->addrInfo.ai_canonname = result->ai_canonname;
+		this->addrInfo.ai_addr = &this->addrSock;
+		//this->addrInfo.ai_canonname = result->ai_canonname;
 	}
 	
 	::freeaddrinfo(this->addrInfo.ai_next);
@@ -63,8 +65,10 @@ int ServerSocket::bind(const char* server_addr, const char* cPort, unsigned queu
 
 Socket ServerSocket::accept()
 {
-	//
-// Wait for an incoming request
-	return ::accept(mySocket, 0, 0);
+	sockaddr addr = { 0 };
+	int len = (int)this->addrInfo.ai_addrlen;
+	
+	SOCKET s = ::accept(mySocket, &addr, &len);
+	return Socket(s, this->addrInfo, addr);
 }
 

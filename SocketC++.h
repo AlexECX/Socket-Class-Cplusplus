@@ -33,7 +33,7 @@ namespace cppsock {
 
     struct connectionInfo
     {
-        char *IP;
+        std::string IP;
         u_short Port;
     };
 
@@ -57,7 +57,7 @@ namespace cppsock {
     private:
         //std::shared_ptr<SocketWrap> mySocket_ptr = nullptr;
         SOCKET mySocket;
-		int nRet;
+		int nRet = 1;
 		int flags = 0; //flags parameter of winsock functions
 		char iobuffer[4096];
 
@@ -65,12 +65,10 @@ namespace cppsock {
         SocketIO(const SOCKET &socket);
         virtual ~SocketIO();
 
-		std::string getSocketErr();
+		//negative if error, 0 if closed by peer
+		int getStatus() { return nRet; }
 
-		int getIOError() { return nRet; }
-
-		bool ioInterupt() { return nRet < 1; }
-
+		//flags argument of the winsock functions
 		void setFlags(int flags) { this->flags = flags; }
 
 		//send until len characters are sent
@@ -93,7 +91,7 @@ namespace cppsock {
 		//send until len characters starting at offset position are sent
 		size_t send(const std::string &str, size_t offset, size_t len);
 
-		//send the content of a string, no std::string null terminator
+		//send the content of a string w/out std::string null terminator
 		size_t send(const std::string &str);
 
 		//recv into string container until len characters are received
@@ -125,12 +123,13 @@ namespace cppsock {
     private:
     protected:
 		bool autoclose = true;
+		int wsa_err = 0;
         SOCKET mySocket;
-		addrinfo addrInfo = {0};
+		addrinfo addrInfo = { 0 };
+		sockaddr addrSock = { 0 };
         std::string socket_err = "";
 
-        BaseSocket(const SOCKET &socket);
-        void socketError(const std::string &msg, std::string f);
+        void socketError(/*const std::string &msg, const std::string &f*/);
 
     public:
 		BaseSocket(int af = AF_INET, int type = SOCK_STREAM, int protocol = IPPROTO_TCP);
@@ -141,17 +140,19 @@ namespace cppsock {
 
         virtual ~BaseSocket();
 
-        /*connectionInfo getIPinfo();
+        connectionInfo getIPinfo();
 
-        connectionInfo getIPinfoLocal();*/
+        connectionInfo getIPinfoLocal();
 
-        std::string getSocketErr();
+        std::string getErrString();
+
+		int getErr() { return wsa_err; }
 
         int shutdown(int how);
 
         void close();
 
-        bool valid_socket() { return mySocket > 0; }
+        bool valid_socket() { return !(mySocket == INVALID_SOCKET || mySocket == SOCKET_ERROR); }
 
 		SocketIO getStream();
     };
@@ -162,7 +163,7 @@ namespace cppsock {
 	friend class ServerSocket;
 
 	private:
-		Socket(const SOCKET &socket);
+		Socket(const SOCKET&, const addrinfo&, const sockaddr&);
 
     public:
         Socket();
@@ -175,6 +176,8 @@ namespace cppsock {
 		}
 
         int connect(const char* server_addr, const char* cPort);
+
+		int connect(const sockaddr* name, int namelen);
     };
 
 

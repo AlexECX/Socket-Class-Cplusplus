@@ -60,12 +60,12 @@ void runClient(const char* host, const char* nPort)
 	{
 		Socket client = Socket();
 		if (!client.valid_socket())
-			throw SocketException(client.getSocketErr(), TRACEBACK);
+			throw SocketException(client.getErrString(), TRACEBACK);
 
 		while (true) {
 			cout << "\nconnection a " << host << " sur port " << nPort;
 			if (client.connect(host, nPort) < 0) {
-				cout << endl << client.getSocketErr();
+				cout << endl << client.getErrString();
 				this_thread::sleep_for(2s); 
 			}
 			else {
@@ -75,27 +75,17 @@ void runClient(const char* host, const char* nPort)
 		cout << "\nConnecte." << endl;
         cout << "\nEnvoie message" << endl;
 		SocketIO stream = client.getStream();
-		const char* str = "this is client";
-		/*stream.sendStr("this is client");
+
+		stream.sendStr("this is client");
         std::string packet;
         cout << "\nReception en cours..." << endl;
         stream.recvStr(packet);
-        cout << "\nMessage recu: "+packet << endl;*/
-		/*char t[4096];
-		unsigned i = 0;
-		int nRet;
-		(nRet = stream.recv(t, 0, 4096));
-		while ((nRet = stream.recv(t, 0, 4096)) > 0)
+        cout << "\nMessage recu: "+packet << endl;
+		//cout << endl << stream.recvFile("./client.mp4");
+		if (stream.getStatus() < 1)
 		{
-			i += nRet;
-		}
-		cout << endl << i;
-		cout << endl << nRet;*/
-		cout << endl << stream.recvFile("./client.mp4");
-		if (stream.ioInterupt())
-		{
-			cout << endl << stream.getIOError();
-			cout << endl << stream.getSocketErr();
+			cout << endl << stream.getStatus();
+			cout << endl << WSA_ERROR;
 		}
 
 	}

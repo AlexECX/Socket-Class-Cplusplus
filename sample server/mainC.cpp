@@ -1,10 +1,9 @@
+#include "../SocketC++.h"
 #include <iostream>
 #include <string>
 //#include <windows.h>
 #include <thread>
-#include "../SocketC++.h"
-#include <limits>
-#include <istream>
+#include <initializer_list>
 
 using namespace std;
 using namespace cppsock;
@@ -13,24 +12,37 @@ using namespace cppsock;
 
 void runServer(const char* nPort);
 
+//template<typename T, typename... Args>
+//void t_printLn(T t, Args... args);
+
+template <typename T>
+void printLn(T t);
+
+template<typename T, typename... Args>
+void printLn(T t, Args... args);
+
 int main(int argc, char **argv)
 {
 	const char* nPort;
 	//
 	// Check for port argument
 	//
-	if (argc > 2) {
-		cout << "\nSyntax: PortNumber"; 
-		cout << endl;
+	if (argc == 4) {
+		printLn("Syntax: PortNumber"); 
 		return 0;
 	}
 	else if (argc < 2)
 	{
 		nPort = PORT;
 	}
-	else
+	else if (argc == 2)
 	{
 		nPort = argv[1];
+	}
+	else
+	{
+		printLn("Syntax: PortNumber");
+		return 0;
 	}
 
 	try
@@ -45,7 +57,7 @@ int main(int argc, char **argv)
 	}
 	catch (const std::exception& e)
 	{
-		cout << endl << e.what();
+		printLn(e.what());
 	}
 	return 0;
 }
@@ -56,30 +68,46 @@ void runServer(const char* nPort)
 	{
 		ServerSocket server = ServerSocket(nPort);
 		if (!server.valid_socket()) 
-			throw SocketException(server.getSocketErr(), TRACEBACK);
+			throw SocketException(server.getErrString(), TRACEBACK);
 
-        cout << "\nAttente d'une connection" << endl;
+		printLn("\nAttente d'une connection");
         Socket client = server.accept();
         if (!client.valid_socket()) {
-            throw SocketException(client.getSocketErr(), TRACEBACK);
+            throw SocketException(client.getErrString(), TRACEBACK);
         }
-        cout << "\nReception en cours..." << endl;
+		printLn("\nReception en cours...");
 		SocketIO stream = client.getStream();
 		string message = "";
-        /*stream.recvStr(message);
+        stream.recvStr(message);
         cout << "\nMessage recu: "+message << endl;
-        cout << "\nEnvoie au client..." << endl;*/
-        //stream.send("this is server");
-		cout << endl << stream.sendFile("../../Debug/server.mp4");
-		
-		if (stream.ioInterupt())
+        cout << "\nEnvoie au client..." << endl;
+        stream.sendStr("this is server");
+		//cout << endl << stream.sendFile("../../Debug/server.mp4");
+		printLn(1.2, "hey", string("hello"), (unsigned long long)456789);
+		printLn(1.2, "hey", string("hello"), (unsigned long long)456789);
+		printLn(1.2, "hey", string("hello"), (unsigned long long)456789);
+		if (stream.getStatus() < 1)
 		{
-			cout << endl << stream.getIOError();
-			cout << endl << stream.getSocketErr();
+			printLn(stream.getStatus(), " ", WSA_ERROR);
 		}	
 	}
 	catch (const SocketException& e)
 	{
-		cout << endl << e.what();
+		printLn(e.what());
 	}	
+}
+
+
+template <typename T>
+void printLn(T t)
+{
+	std::cout << t << std::endl;
+}
+
+
+template<typename T, typename... Args>
+void printLn(T t, Args... args) // recursive variadic function
+{
+	std::cout << t;
+	printLn(args...);
 }

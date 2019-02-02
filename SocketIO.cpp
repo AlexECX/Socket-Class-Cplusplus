@@ -17,11 +17,6 @@ SocketIO::~SocketIO()
 {
 }
 
-string SocketIO::getSocketErr()
-{
-	return WSA_ERROR;
-}
-
 int SocketIO::send(const char * msg, int len)
 {
 	nRet = 0;
@@ -110,7 +105,7 @@ size_t SocketIO::recvStr(std::string & str)
 	unsigned recved = 0;
 	str.clear();
 
-	while ((nRet = recv(this->iobuffer, 0, 4096)) > 0) {
+	while ((nRet = recv(this->iobuffer + recved, 4096)) > 0) {
 		recved += nRet;
 		if (this->iobuffer[nRet - 1] == '\0')
 		{
