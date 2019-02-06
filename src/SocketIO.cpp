@@ -42,18 +42,6 @@ int SocketIO::recv(char * msg, int offset, int len)
 	return (nRet < 0) ? nRet : recved;
 }
 
-template <class T>
-int SocketIO::send(const T& i)
-{
-	return send((char *)&i, sizeof(T));
-}
-
-template <class T>
-int SocketIO::recv(T & i)
-{
-	return recv((char*)&i, sizeof(T));
-}
-
 size_t SocketIO::send(const string &str, size_t offset, size_t len)
 {
 	if (len > 5000000)

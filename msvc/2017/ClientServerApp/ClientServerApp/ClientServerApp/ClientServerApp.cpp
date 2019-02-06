@@ -1,7 +1,8 @@
-#include "../include/SocketC++.h"
+ï»¿
+#include "pch.h"
+#include "SocketC++.h"
 #include <iostream>
 #include <string>
-//#include <windows.h>
 #include <thread>
 #include <regex>
 
@@ -19,11 +20,6 @@ void sendFileClient(const char* host, const char* nPort, const string& filePath)
 void sendFileServer(const char* host, const char* nPort);
 void getFileClient(const char* host, const char* nPort, const string& filePath);
 void getFileServer(const char* host, const char* nPort);
-
-void runServer(const char* nPort);
-
-//template<typename T, typename... Args>
-//void t_printLn(T t, Args... args);
 
 template <typename T>
 void printLn(T t);
@@ -274,13 +270,13 @@ void testServer(const char * host, const char * nPort)
 		stream.recv(message);
 		printLn("\nMessage recu: ", message);
 		printLn("\nEnvoie au client...");
-		stream.send("this is server");
+		stream.send("this is server", 14);
 
 		if (stream.getStatus() < 1)
 		{
 			printLn(stream.getStatus(), " ", WSA_ERROR);
 		}
-		
+
 	}
 	catch (const SocketException& e)
 	{
@@ -338,7 +334,7 @@ void sendFileServer(const char * host, const char * nPort)
 			if (!client.valid_socket()) {
 				throw SocketException(client.getErrString(), TRACEBACK);
 			}
-			printLn("Connecté");
+			printLn("Connected");
 			SocketIO stream = client.getStream();
 			string filePath = "";
 			printLn("Receiving file path");
@@ -408,7 +404,7 @@ void getFileServer(const char * host, const char * nPort)
 			if (!client.valid_socket()) {
 				throw SocketException(client.getErrString(), TRACEBACK);
 			}
-			printLn("Connecté");
+			printLn("Connected");
 			SocketIO stream = client.getStream();
 			printLn("Reception file path");
 			string filePath = "";

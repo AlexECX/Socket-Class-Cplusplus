@@ -46,7 +46,7 @@ int Socket::connect(const char* server_addr, const char* cPort)
 	{
 		do
 		{
-			nRet = connect(result->ai_addr, (int)result->ai_addrlen);
+			nRet = ::connect(mySocket, result->ai_addr, (int)result->ai_addrlen);
 		} while (nRet < 0 && (result = result->ai_next) != nullptr);
 		
 		if (nRet < 0)
@@ -55,9 +55,10 @@ int Socket::connect(const char* server_addr, const char* cPort)
 		}
 		else if (result != nullptr)
 		{
-			this->addrInfo.ai_addr = result->ai_addr;
+			this->addrSock = *result->ai_addr;
 			this->addrInfo.ai_addrlen = result->ai_addrlen;
-			this->addrInfo.ai_canonname = result->ai_canonname;
+			this->addrInfo.ai_addr = &this->addrSock;
+			//this->addrInfo.ai_canonname = result->ai_canonname;
 		}
 	}
 
@@ -68,5 +69,17 @@ int Socket::connect(const char* server_addr, const char* cPort)
 
 int Socket::connect(const sockaddr * name, int namelen)
 {
-	return ::connect(mySocket, name, namelen);
+	int nRet = ::connect(mySocket, name, namelen);
+	if (nRet < 0)
+	{
+		this->socketError(/*WSA_ERROR, __FUNCTION__*/);
+	}
+	else
+	{
+		this->addrSock = *name;
+		this->addrInfo.ai_addrlen = namelen;
+		this->addrInfo.ai_addr = &this->addrSock;
+		//this->addrInfo.ai_canonname = result->ai_canonname;
+	}
+	return nRet;
 }

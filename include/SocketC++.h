@@ -80,13 +80,19 @@ namespace cppsock {
 		//recv until len characters are received
 		int recv(char* msg, int offset, int len);
 
-		//send until sizeof(T) bytes are sent
+		/*send until sizeof(T) bytes are sent*/
 		template <class T>
-		int send(const T& i);
+		int send(const T i) 
+		{
+			return send((char *)&i, sizeof(T));
+		}
 
 		//recv until sizeof(T) bytes are received
 		template <class T>
-		int recv(T& i);
+		int recv(T& i) 
+		{
+			return recv((char*)&i, sizeof(T));
+		}
 
 		//send until len characters starting at offset position are sent
 		size_t send(const std::string &str, size_t offset, size_t len);
@@ -195,6 +201,8 @@ namespace cppsock {
 		}
 
 		int bind(const char* server_addr, const char* cPort, unsigned queue_size = SOMAXCONN);
+
+		int bind(const sockaddr* name, int namelen, unsigned queue_size = SOMAXCONN);
 
 		Socket accept();
 	};

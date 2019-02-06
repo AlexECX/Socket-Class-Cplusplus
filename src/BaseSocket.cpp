@@ -14,7 +14,7 @@ BaseSocket::BaseSocket(int af, int type, int protocol)
 	//mySocket_ptr = make_shared<SocketWrap>(::socket(af, type, protocol));
 	mySocket = ::socket(af, type, protocol);
 
-	if (mySocket == INVALID_SOCKET || mySocket == SOCKET_ERROR)
+	if (mySocket == INVALID_SOCKET)
 	{
 		this->socketError(/*WSA_ERROR, __FUNCTION__*/);
 	}

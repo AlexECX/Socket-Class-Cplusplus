@@ -44,7 +44,19 @@ int ServerSocket::bind(const char* server_addr, const char* cPort, unsigned queu
 		this->socketError(/*WSA_ERROR, __FUNCTION__*/);
 		nRet = -1;
 	}
-	else if (0 > (nRet = ::bind(mySocket, result->ai_addr, (int)result->ai_addrlen))) {
+	else if (0 > (nRet = bind(result->ai_addr, (int)result->ai_addrlen))) {
+		this->socketError(/*WSA_ERROR, __FUNCTION__*/);
+	}
+	
+	::freeaddrinfo(this->addrInfo.ai_next);
+
+	return nRet;
+}
+
+int ServerSocket::bind(const sockaddr * name, int namelen, unsigned queue_size)
+{
+	int nRet;
+	if (0 > (nRet = ::bind(mySocket, name, namelen))) {
 		this->socketError(/*WSA_ERROR, __FUNCTION__*/);
 	}
 	else if (0 > (nRet = ::listen(mySocket, queue_size))) {
@@ -52,13 +64,11 @@ int ServerSocket::bind(const char* server_addr, const char* cPort, unsigned queu
 	}
 	else
 	{
-		this->addrSock = *result->ai_addr;
-		this->addrInfo.ai_addrlen = result->ai_addrlen;
+		this->addrSock = *name;
+		this->addrInfo.ai_addrlen = namelen;
 		this->addrInfo.ai_addr = &this->addrSock;
 		//this->addrInfo.ai_canonname = result->ai_canonname;
 	}
-	
-	::freeaddrinfo(this->addrInfo.ai_next);
 
 	return nRet;
 }
