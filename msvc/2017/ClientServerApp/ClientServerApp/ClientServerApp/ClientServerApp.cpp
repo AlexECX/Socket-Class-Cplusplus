@@ -167,6 +167,18 @@ int main(int argc, char **argv)
 	{
 		printLn(e.what());
 	}
+	catch (...) {
+		auto expPtr = std::current_exception();
+
+		try
+		{
+			if (expPtr) std::rethrow_exception(expPtr);
+		}
+		catch (const std::exception& e) //it would not work if you pass by value
+		{
+			printLn(e.what());
+		}
+	}
 	return 0;
 }
 
@@ -178,37 +190,132 @@ void testClient(const char * host, const char * nPort)
 		if (!client.valid_socket())
 			throw SocketException(client.getErrString(), TRACEBACK);
 
+		int integer = 0;
+		string message = "";
+
+		//Test send(int) et recv(int)//
+		printLn("Test send(int) et recv(int)");
 		while (true) {
-			cout << "\nconnection a " << host << " sur port " << nPort;
+			printLn("connection a ", host, " sur port ", nPort);
 			if (client.connect(host, nPort) < 0) {
-				cout << endl << client.getErrString();
+				printLn(client.getErrString());
 				this_thread::sleep_for(2s);
 			}
 			else {
 				break;
 			}
 		}
-		cout << "\nConnecte." << endl;
-		cout << "\nEnvoie message" << endl;
-		SocketIO stream = client.getStream();
+		printLn("Connecte");
 
-		stream.sendStr("this is client");
-		std::string packet;
-		cout << "\nReception en cours..." << endl;
-		stream.recvStr(packet);
-		cout << "\nMessage recu: " + packet << endl;
+		SocketIO stream = client.getStream();
+		printLn("Envoie message");
+		stream.send(integer);
+		printLn("Reception en cours...");
+		stream.recv(integer);
+		printLn("Message recu: ", integer);
+		this_thread::sleep_for(0.5s);
+		client.shutdown(SD_BOTH);
 
 		if (stream.getStatus() < 1)
 		{
-			cout << endl << stream.getStatus();
-			cout << endl << WSA_ERROR;
+			printLn(stream.getStatus(), " ", WSA_ERROR, ": ", __LINE__);
+		}
+
+		//Test sendStr() et recvStr()//
+		printLn("Test sendStr() et recvStr()");
+		client = Socket();
+		while (true) {
+			printLn("connection a ", host, " sur port ", nPort);
+			if (client.connect(host, nPort) < 0) {
+				printLn(client.getErrString());
+				this_thread::sleep_for(2s);
+			}
+			else {
+				break;
+			}
+		}
+		printLn("Connecte");
+
+		stream = client.getStream();
+		printLn("Envoie message");
+		stream.sendStr("this is client");
+		printLn("Reception en cours...");
+		stream.recvStr(message);
+		printLn("Message recu: ", message);
+
+		if (stream.getStatus() < 1)
+		{
+			printLn(stream.getStatus(), " ", WSA_ERROR, ": ", __LINE__);
+		}
+
+		//Test send(string, len) et recv(string, len)//
+		printLn("Test send(string, len) et recv(string, len)");
+		client = Socket();
+		while (true) {
+			printLn("connection a ", host, " sur port ", nPort);
+			if (client.connect(host, nPort) < 0) {
+				printLn(client.getErrString());
+				this_thread::sleep_for(2s);
+			}
+			else {
+				break;
+			}
+		}
+		printLn("Connecte");
+
+		stream = client.getStream();
+		printLn("Envoie message");
+		stream.send("this is client", 14);
+		printLn("Reception en cours...");
+		stream.recv(message, 14);
+		printLn("Message recu: ", message);
+		this_thread::sleep_for(0.5s);
+
+		if (stream.getStatus() < 1)
+		{
+			printLn(stream.getStatus(), " ", WSA_ERROR, ": ", __LINE__);
+		}
+
+		//Test send(string) then disconnect//
+		printLn("Test send(string, len) et recv(string, len)");
+		client = Socket();
+		while (true) {
+			printLn("connection a ", host, " sur port ", nPort);
+			if (client.connect(host, nPort) < 0) {
+				printLn(client.getErrString());
+				this_thread::sleep_for(2s);
+			}
+			else {
+				break;
+			}
+		}
+		printLn("Connecte");
+
+		stream = client.getStream();
+		printLn("Envoie message");
+		stream.send(string("this is client"));
+		this_thread::sleep_for(0.5s);
+
+		if (stream.getStatus() < 1)
+		{
+			printLn(stream.getStatus(), " ", WSA_ERROR, ": ", __LINE__);
+		}
+
+
+		printLn("Test multiple connect()");
+		for (size_t i = 0; i < 100; i++)
+		{
+			client = Socket(host, nPort);
+			this_thread::sleep_for(1ms);
 		}
 
 	}
 	catch (const SocketException& e)
 	{
-		cout << endl << e.what();
+		printLn(e.what());
 	}
+
+
 }
 
 void testServer(const char * host, const char * nPort)
@@ -225,17 +332,20 @@ void testServer(const char * host, const char * nPort)
 		if (!client.valid_socket()) {
 			throw SocketException(client.getErrString(), TRACEBACK);
 		}
+		printLn("Connected");
 		SocketIO stream = client.getStream();
 		int integer = 0;
 		printLn("Reception en cours...");
 		stream.recv(integer);
-		printLn("\nMessage recu: ", integer);
-		printLn("\nEnvoie au client...");
+		printLn("Message recu: ", integer);
+		printLn("Envoie au client...");
+		integer++;
 		stream.send(integer);
+		this_thread::sleep_for(0.5s);
 
 		if (stream.getStatus() < 1)
 		{
-			printLn(stream.getStatus(), " ", WSA_ERROR);
+			printLn(stream.getStatus(), " ", WSA_ERROR, ": ", __LINE__);
 		}
 
 		//Test sendStr() et recvStr()//
@@ -244,38 +354,74 @@ void testServer(const char * host, const char * nPort)
 		if (!client.valid_socket()) {
 			throw SocketException(client.getErrString(), TRACEBACK);
 		}
+		printLn("Connected");
 		stream = client.getStream();
 		string message = "";
 		printLn("Reception en cours...");
 		stream.recvStr(message);
-		printLn("\nMessage recu: ", message);
-		printLn("\nEnvoie au client...");
+		printLn("Message recu: ", message);
+		printLn("Envoie au client...");
 		stream.sendStr("this is server");
+		this_thread::sleep_for(0.5s);
 
 		if (stream.getStatus() < 1)
 		{
-			printLn(stream.getStatus(), " ", WSA_ERROR);
+			printLn(stream.getStatus(), " ", WSA_ERROR, ": ", __LINE__);
 		}
 
-		//Test send(string, len) et recvStr(string, len)//
-		printLn("Test send(string, len) et recvStr(string, len)");
+		//Test send(string, len) et recv(string, len)//
+		printLn("Test send(string, len) et recv(string, len)");
 		client = server.accept();
 		if (!client.valid_socket()) {
 			throw SocketException(client.getErrString(), TRACEBACK);
 		}
+		printLn("Connected");
 		stream = client.getStream();
 		message = "";
-		integer = 0;
-		printLn("Reception taiile message");
-		stream.recv(message);
-		printLn("\nMessage recu: ", message);
-		printLn("\nEnvoie au client...");
+		printLn("Reception en cours...");
+		stream.recv(message, 14);
+		printLn("Message recu: ", message);
+		printLn("Envoie au client...");
 		stream.send("this is server", 14);
+		this_thread::sleep_for(0.5s);
 
 		if (stream.getStatus() < 1)
 		{
-			printLn(stream.getStatus(), " ", WSA_ERROR);
+			printLn(stream.getStatus(), " ", WSA_ERROR, ": ", __LINE__);
 		}
+
+		//Test sendStr(string) et recvStr(string)//
+		printLn("Test recvStr(string) until disconnect");
+		client = server.accept();
+		if (!client.valid_socket()) {
+			throw SocketException(client.getErrString(), TRACEBACK);
+		}
+		printLn("Connected");
+		stream = client.getStream();
+		message = "";
+		printLn("Reception en cours...");
+		stream.recv(message);
+		printLn("Message recu: ", message);
+		this_thread::sleep_for(0.5s);
+
+		if (stream.getStatus() < 1)
+		{
+			printLn(stream.getStatus(), " ", WSA_ERROR, ": ", __LINE__);
+		}
+
+		printLn("TEST multiple bind()");
+		for (size_t i = 0; i < 100; i++)
+		{
+			server = ServerSocket(nPort);
+			this_thread::sleep_for(1ms);
+		}
+
+		/*printLn("Test multiple accept()");
+		while (true)
+		{
+			client = server.accept();
+			this_thread::sleep_for(1ms);
+		}*/
 
 	}
 	catch (const SocketException& e)
@@ -344,7 +490,7 @@ void sendFileServer(const char * host, const char * nPort)
 			printLn(stream.sendFile(filePath));
 			if (stream.getStatus() < 1)
 			{
-				printLn(stream.getStatus(), " ", WSA_ERROR);
+				printLn(stream.getStatus(), " ", WSA_ERROR, ": ", __LINE__);
 			}
 		}
 		catch (const SocketException& e) {
@@ -414,7 +560,7 @@ void getFileServer(const char * host, const char * nPort)
 			printLn(stream.recvFile(filePath));
 			if (stream.getStatus() < 1)
 			{
-				printLn(stream.getStatus(), " ", WSA_ERROR);
+				printLn(stream.getStatus(), " ", WSA_ERROR, ": ", __LINE__);
 			}
 		}
 		catch (const SocketException& e) {

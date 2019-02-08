@@ -15,10 +15,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\..\include\SocketC++.h">
+    <ClInclude Include="..\..\..\..\..\include\WSA_Utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\..\include\WSA_Utils.h">
+    <ClInclude Include="..\..\..\..\..\include\SocketC++.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

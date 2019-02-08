@@ -6,26 +6,35 @@ using namespace cppsock;
 
 //Socket///////////////////////////////////////////////////////
 
-Socket::Socket()
+//Socket::Socket() : BaseSocket()
+//{
+//}
+
+Socket::Socket(int af, int type, int protocol) : BaseSocket(af, type, protocol)
 {
 }
 
-Socket::Socket(const SOCKET &socket, const addrinfo &addrInfo, const sockaddr &addr)
+Socket::Socket(const Socket & other) : BaseSocket(other)
 {
-	//mySocket_ptr = make_shared<SocketWrap>(socket);
-	mySocket = socket;
-	this->addrInfo = addrInfo;
-	this->addrSock = addr;
-	this->addrInfo.ai_addr = &this->addrSock;
-	if (mySocket == INVALID_SOCKET || mySocket == SOCKET_ERROR)
-	{
-		this->socketError(/*WSA_ERROR, __FUNCTION__*/);
-	}
 }
 
-Socket::Socket(const char* server_addr, const char* cPort)
+Socket::Socket(Socket && other) : BaseSocket(std::move(other))
+{
+}
+
+Socket::Socket(const SOCKET &socket, SOCKET_ADDRESS addr, int type, int protocol)
+	: BaseSocket(socket, addr, type, protocol)
+{
+}
+
+Socket::Socket(const char* server_addr, const char* cPort) : Socket()
 {
     connect(server_addr, cPort);
+}
+
+Socket::Socket(const sockaddr * name, int namelen) : Socket()
+{
+	connect(name, namelen);
 }
 
 Socket::~Socket()
@@ -35,8 +44,14 @@ Socket::~Socket()
 
 int Socket::connect(const char* server_addr, const char* cPort)
 {
-	addrinfo *result = this->addrInfo.ai_next;
-	int nRet = ::getaddrinfo(server_addr, cPort, &this->addrInfo, &result);
+	addrinfo addrInfo = { 0 };
+	addrInfo.ai_flags = this->ai_flags;
+	addrInfo.ai_family = this->ai_family;
+	addrInfo.ai_socktype = this->ai_socktype;
+	addrInfo.ai_protocol = this->ai_protocol;
+	addrinfo *result = nullptr;
+
+	int nRet = ::getaddrinfo(server_addr, cPort, &addrInfo, &result);
 	if (nRet != 0)
 	{
 		this->socketError(/*WSA_ERROR, __FUNCTION__*/);
@@ -46,23 +61,16 @@ int Socket::connect(const char* server_addr, const char* cPort)
 	{
 		do
 		{
-			nRet = ::connect(mySocket, result->ai_addr, (int)result->ai_addrlen);
+			nRet = connect(result->ai_addr, (int)result->ai_addrlen);
 		} while (nRet < 0 && (result = result->ai_next) != nullptr);
 		
 		if (nRet < 0)
 		{
 			this->socketError(/*WSA_ERROR, __FUNCTION__*/);
 		}
-		else if (result != nullptr)
-		{
-			this->addrSock = *result->ai_addr;
-			this->addrInfo.ai_addrlen = result->ai_addrlen;
-			this->addrInfo.ai_addr = &this->addrSock;
-			//this->addrInfo.ai_canonname = result->ai_canonname;
-		}
 	}
 
-	::freeaddrinfo(this->addrInfo.ai_next);
+	::freeaddrinfo(result);
 
     return nRet;
 }
@@ -76,10 +84,8 @@ int Socket::connect(const sockaddr * name, int namelen)
 	}
 	else
 	{
-		this->addrSock = *name;
-		this->addrInfo.ai_addrlen = namelen;
-		this->addrInfo.ai_addr = &this->addrSock;
-		//this->addrInfo.ai_canonname = result->ai_canonname;
+		this->addrsock.lpSockaddr = (LPSOCKADDR)name;
+		this->addrsock.iSockaddrLength = namelen;
 	}
 	return nRet;
 }

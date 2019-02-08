@@ -18,6 +18,13 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\..\test\TestCppSocket.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\..\test\CppSocketMocks.h" />
+    <ClInclude Include="..\..\..\..\..\test\winsock_mocks.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{1F4AED9C-D0F3-4ECC-BFE6-33D54D10C780}</ProjectGuid>
@@ -76,7 +83,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);../../../../../include;../../../../../GTest/googletest/include;../../../../../GTest/hippomocks;</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);../../../../../include;../../../../../GTest/googletest/include;../../../../../GTest/googlemock/include;../../../../../GTest/hippomocks</IncludePath>
     <SourcePath>$(VC_SourcePath);../../../../../src;</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -115,7 +122,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>../../../CppSocketLib/CppSocketLib/x64/Debug;../../../../../GTest/googletest/lib/x64/Debug;</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../../CppSocketLib/CppSocketLib/x64/Debug;../../../../../GTest/googlemock/lib/x64/Debug;../../../../../GTest/googletest/lib/x64/Debug</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -156,9 +163,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="TestCppSocket.cpp" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

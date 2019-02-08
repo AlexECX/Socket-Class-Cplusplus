@@ -6,15 +6,32 @@ using namespace cppsock;
 
 //BaseSocket///////////////////////////////////////////////////////
 
+BaseSocket::BaseSocket()
+{
+}
+
 BaseSocket::BaseSocket(int af, int type, int protocol)
 {
-	this->addrInfo.ai_family = af;
-	this->addrInfo.ai_socktype = type;
-	this->addrInfo.ai_protocol = protocol;
-	//mySocket_ptr = make_shared<SocketWrap>(::socket(af, type, protocol));
 	mySocket = ::socket(af, type, protocol);
+	this->ai_family = af;
+	this->ai_socktype = type;
+	this->ai_protocol = protocol;
 
-	if (mySocket == INVALID_SOCKET)
+	if (mySocket == INVALID_SOCKET || mySocket == SOCKET_ERROR)
+	{
+		this->socketError(/*WSA_ERROR, __FUNCTION__*/);
+	}
+}
+
+BaseSocket::BaseSocket(const SOCKET & socket, SOCKET_ADDRESS addr, int type, int protocol)
+{
+	this->ai_family = addr.lpSockaddr->sa_family;
+	this->ai_socktype = type;
+	this->ai_protocol = protocol;
+	this->addrsock = addr;
+
+	mySocket = socket;
+	if (mySocket == INVALID_SOCKET || mySocket == SOCKET_ERROR)
 	{
 		this->socketError(/*WSA_ERROR, __FUNCTION__*/);
 	}
@@ -23,7 +40,23 @@ BaseSocket::BaseSocket(int af, int type, int protocol)
 
 BaseSocket::BaseSocket(const BaseSocket & other)
 {
-	*this = other;
+	if (this != &other)
+	{
+		if (this->autoclose)
+		{
+			this->close();
+		}
+		this->mySocket = other.mySocket;
+		this->ai_flags = other.ai_flags;
+		this->ai_family = other.ai_family;
+		this->ai_socktype = other.ai_socktype;
+		this->ai_protocol = other.ai_protocol;
+		this->ai_canonname = other.ai_canonname;
+		this->addrsock = other.addrsock;
+		this->wsa_err = other.wsa_err;
+		
+		this->autoclose = (other.autoclose) ? false : other.autoclose;
+	}
 }
 
 BaseSocket::BaseSocket(BaseSocket &&other)
@@ -37,20 +70,31 @@ BaseSocket::~BaseSocket()
 	{
 		::closesocket(this->mySocket);
 	}
+
 }
 
-BaseSocket &BaseSocket::operator=(const BaseSocket &other)
+BaseSocket &BaseSocket::operator=(BaseSocket &other)
 {
-    //mySocket_ptr = other.mySocket_ptr;
 	if (this != &other)
 	{
+		if (this->autoclose)
+		{
+			this->close();
+		}
 		this->mySocket = other.mySocket;
-		this->addrInfo = other.addrInfo;
-		this->addrSock = other.addrSock;
-		this->addrInfo.ai_addr = &this->addrSock;
-		this->socket_err = other.socket_err;
+		this->ai_flags = other.ai_flags;
+		this->ai_family = other.ai_family;
+		this->ai_socktype = other.ai_socktype;
+		this->ai_protocol = other.ai_protocol;
+		this->ai_canonname = other.ai_canonname;
+		this->addrsock = other.addrsock;
+		this->wsa_err = other.wsa_err;
+		
+		this->autoclose = other.autoclose;
+
+		other.autoclose = false;
 	}
-    return *this;
+	return *this;
 }
 
 BaseSocket &BaseSocket::operator=(BaseSocket &&other)
@@ -58,11 +102,21 @@ BaseSocket &BaseSocket::operator=(BaseSocket &&other)
 	//mySocket_ptr = other.mySocket_ptr;
 	if (this != &other)
 	{
+		if (this->autoclose)
+		{
+			this->close();
+		}
 		this->mySocket = other.mySocket;
-		this->addrInfo = other.addrInfo;
-		this->addrSock = other.addrSock;
-		this->addrInfo.ai_addr = &this->addrSock;
-		this->socket_err = other.socket_err;
+		this->ai_flags = other.ai_flags;
+		this->ai_family = other.ai_family;
+		this->ai_socktype = other.ai_socktype;
+		this->ai_protocol = other.ai_protocol;
+		this->ai_canonname = other.ai_canonname;
+		this->addrsock = other.addrsock;
+		this->wsa_err = other.wsa_err;
+		
+		this->autoclose = other.autoclose;
+
 		other.autoclose = false;
 	}
 	return *this;
@@ -76,10 +130,10 @@ void BaseSocket::socketError(/*const string &msg, const string &f*/)
 connectionInfo BaseSocket::getIPinfo()
 {
 	connectionInfo info;
-
-	if (addrInfo.ai_addr->sa_family == AF_INET) {
-		//info.Port = htons(((sockaddr_in*)addrInfo.ai_addr)->sin_port);
-		sockaddr_in *ptr = ((sockaddr_in*)addrInfo.ai_addr);
+	sockaddr* addr = this->addrsock.lpSockaddr;
+	if (addr->sa_family == AF_INET) {
+		//info.Port = htons(((sockaddr_in*)this->ai_addr)->sin_port);
+		sockaddr_in *ptr = ((sockaddr_in*)addr);
 		info.Port = htons(ptr->sin_port);
 		char buff[INET_ADDRSTRLEN];
 		::inet_ntop(ptr->sin_family, &ptr->sin_addr, buff, INET_ADDRSTRLEN);
@@ -87,8 +141,8 @@ connectionInfo BaseSocket::getIPinfo()
 	}
 	else
 	{
-		//info.Port = htons(((sockaddr_in6*)addrInfo.ai_addr)->sin6_port);
-		sockaddr_in6 *ptr = ((sockaddr_in6*)addrInfo.ai_addr);
+		//info.Port = htons(((sockaddr_in6*)this->ai_addr)->sin6_port);
+		sockaddr_in6 *ptr = ((sockaddr_in6*)addr);
 		info.Port = htons(ptr->sin6_port);
 		char buff[INET6_ADDRSTRLEN];
 		::inet_ntop(ptr->sin6_family, &ptr->sin6_addr, buff, INET6_ADDRSTRLEN);
@@ -102,12 +156,13 @@ connectionInfo BaseSocket::getIPinfoLocal()
 {
     connectionInfo info;
 	sockaddr t = { 0 };
-	int iNlen = (int)addrInfo.ai_addrlen;
-	::getsockname(mySocket, &t, &iNlen);
+	
 	//::inet_ntop(t.sin_family, &t.sin_addr, info.IP, INET_ADDRSTRLEN);
 
-	if (addrInfo.ai_addr->sa_family == AF_INET) {
-		//info.Port = htons(((sockaddr_in*)addrInfo.ai_addr)->sin_port);
+	if (this->addrsock.lpSockaddr->sa_family == AF_INET) {
+		int iNlen = sizeof(sockaddr_in);
+		::getsockname(mySocket, &t, &iNlen);
+		//info.Port = htons(((sockaddr_in*)this->ai_addr)->sin_port);
 		sockaddr_in *ptr = ((sockaddr_in*)&t);
 		info.Port = htons(ptr->sin_port);
 		char buff[INET_ADDRSTRLEN];
@@ -116,11 +171,13 @@ connectionInfo BaseSocket::getIPinfoLocal()
 	}
 	else
 	{
-		//info.Port = htons(((sockaddr_in6*)addrInfo.ai_addr)->sin6_port);
+		int iNlen = sizeof(sockaddr_in6);
+		::getsockname(mySocket, &t, &iNlen);
+		//info.Port = htons(((sockaddr_in6*)this->ai_addr)->sin6_port);
 		sockaddr_in6 *ptr = ((sockaddr_in6*)&t);
 		info.Port = htons(ptr->sin6_port);
-		char buff[INET_ADDRSTRLEN];
-		::inet_ntop(ptr->sin6_family, &ptr->sin6_addr, buff, INET_ADDRSTRLEN);
+		char buff[INET6_ADDRSTRLEN];
+		::inet_ntop(ptr->sin6_family, &ptr->sin6_addr, buff, INET6_ADDRSTRLEN);
 		info.IP = buff;
 	}
     
